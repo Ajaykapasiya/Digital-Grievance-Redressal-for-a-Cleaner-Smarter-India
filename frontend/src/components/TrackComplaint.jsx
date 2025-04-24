@@ -11,35 +11,22 @@ function TrackComplaint() {
   useEffect(() => {
     const fetchComplaints = async () => {
       try {
-        const token = localStorage.getItem('token');
-        
-        // Get user ID from JWT token
-        const tokenParts = token.split('.');
-        if (tokenParts.length !== 3) {
-          throw new Error('Invalid token format');
-        }
-        
-        // Decode the payload part of the JWT token
-        const payload = JSON.parse(atob(tokenParts[1]));
-        console.log('Token payload in TrackComplaint:', payload);
-        
-        // Extract user ID from token payload
-        const userId = payload.userId;
-        if (!userId) {
-          throw new Error('User ID not found in token');
-        }
-        
-        const response = await getUserComplaints({ 
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            user_id: userId // Add user_id to headers
-          }
-        });
+        // No need to manually add token - the axios interceptor handles it
+        const response = await getUserComplaints();
         
         console.log('Complaints response:', response.data);
         setComplaints(response.data.complaints || []);
       } catch (err) {
         console.error('Error fetching complaints:', err);
+        
+        // Check if it's an unauthorized error
+        if (err.response && err.response.status === 401) {
+          // Clear the token and redirect to login
+          localStorage.removeItem('token');
+          navigate('/login');
+          return;
+        }
+        
         setError('Failed to fetch complaints');
       } finally {
         setLoading(false);
@@ -47,7 +34,7 @@ function TrackComplaint() {
     };
     
     fetchComplaints();
-  }, []);
+  }, [navigate]);
 
   if (loading) {
     return (

@@ -45,13 +45,17 @@ exports.createComplaint = (req, res) => {
     
     try {
       // Extract data from request
-      const { subject, sub_category, description, latitude, longitude, address, district, state, pincode, urgency_level } = req.body;
+      const { subject, sub_category, description, latitude, longitude, address, district, state, pincode, urgency_level, user_id: formUserId } = req.body;
       
-      // Get user ID from token
-      const user_id = req.headers.user_id || req.user?.id;
+      // Get user ID from multiple possible sources
+      // 1. From form data (added by frontend)
+      // 2. From request headers (set by interceptor)
+      // 3. From decoded JWT token (set by authMiddleware)
+      const user_id = formUserId || req.headers.user_id || req.user?.id;
       
       console.log('Headers received:', req.headers);
-      console.log('User ID from headers:', user_id);
+      console.log('Form data user_id:', formUserId);
+      console.log('User ID resolved:', user_id);
       
       if (!user_id) {
         return res.status(401).json({ status: 'error', error_message: 'User not authenticated' });
@@ -102,13 +106,21 @@ exports.createComplaint = (req, res) => {
 // Show complaints for a user
 exports.showUserComplaints = async (req, res) => {
   try {
-    const user_id = req.headers.user_id || req.user?.id;
+    console.log('showUserComplaints headers:', req.headers);
+    console.log('showUserComplaints user from token:', req.user);
+    
+    // Get user ID from multiple possible sources
+    // 1. From decoded JWT token (set by authMiddleware)
+    // 2. From request headers
+    const user_id = req.user?.userId || req.headers.user_id;
+    
+    console.log('User ID for fetching complaints:', user_id);
     
     if (!user_id) {
       return res.status(401).json({ status: 'error', error_message: 'User not authenticated' });
     }
     
-    const complaints = await Complaint.find({ user_id }).sort({ created_at: -1 });
+    const complaints = await Complaint.find({ userId: user_id }).sort({ created_at: -1 });
     res.json({ status: 'success', complaints });
   } catch (err) {
     console.error('Error fetching user complaints:', err);

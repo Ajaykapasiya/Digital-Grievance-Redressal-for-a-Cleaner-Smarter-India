@@ -3,6 +3,7 @@ const AdminUser = require('../models/AdminUser');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
+// Make sure this matches exactly with what's in authMiddleware.js
 const JWT_SECRET = 'your-secret-key'; // In production, use environment variable
 
 exports.userSignup = async (req, res) => {

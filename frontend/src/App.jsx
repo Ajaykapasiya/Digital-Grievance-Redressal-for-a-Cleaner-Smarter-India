@@ -133,31 +133,26 @@ const App = () => {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
-              <Route 
-                path="/create-complaint" 
-                element={
-                  <ProtectedRoute>
-                    <CreateComplaint />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/track-complaint" 
-                element={
-                  <ProtectedRoute>
-                    <TrackComplaint />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/dashboard" 
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="/create-complaint" element={
+                <ProtectedRoute>
+                  <CreateComplaint />
+                </ProtectedRoute>
+              } />
+              <Route path="/track-complaint" element={
+                <ProtectedRoute>
+                  <TrackComplaint />
+                </ProtectedRoute>
+              } />
+              <Route path="/user-dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin-dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard isAdmin={true} />
+                </ProtectedRoute>
+              } />
             </Routes>
           </main>
         </div>

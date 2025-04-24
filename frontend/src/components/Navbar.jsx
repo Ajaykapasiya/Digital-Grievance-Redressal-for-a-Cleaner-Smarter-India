@@ -41,7 +41,7 @@ const Navbar = () => {
                 )}
 
                 <Link
-                  to="/view-complaints"
+                  to="/track-complaint"
                   className="text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium"
                 >
                   {isAdmin ? 'All Complaints' : 'My Complaints'}

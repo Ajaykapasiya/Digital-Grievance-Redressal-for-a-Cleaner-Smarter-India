@@ -221,13 +221,11 @@ const CreateComplaint = () => {
         }
       });
 
-      const headers = { 
-        Authorization: `Bearer ${token}`,
-        user_id: userId // Use userId from token
-      };
+      // Add user_id to the form data - this is important for the backend
+      submitData.append('user_id', userId);
 
-      console.log('Sending request with headers:', headers);
-      const response = await createComplaint(submitData, headers);
+      console.log('Sending request with user_id in form data:', userId);
+      const response = await createComplaint(submitData);
       
       if (response.data) {
         // Redirect to track complaints page

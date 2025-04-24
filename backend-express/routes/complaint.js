@@ -15,8 +15,4 @@ router.post('/create', validateComplaint, createComplaint);
 router.get('/user_complaints', showUserComplaints);
 router.get('/:id', showComplaintById);
 
-module.exports = router;// In routes/complaint.js
-const authMiddleware = require('../middleware/authMiddleware');
-
-// Apply authentication middleware to all complaint routes
-router.use(authMiddleware);
+module.exports = router;

@@ -64,5 +64,3 @@ const server = app.listen(PORT, () => {
   }
   process.exit(1);
 });
-// In server.js
-app.use('/complaint', complaintRoutes); // Remove validateComplaint
