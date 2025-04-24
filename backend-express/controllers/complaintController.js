@@ -149,3 +149,66 @@ exports.showComplaintById = async (req, res) => {
     res.status(500).json({ status: 'error', error_message: err.message });
   }
 };
+
+// Get all complaints for admin
+exports.getAllComplaints = async (req, res) => {
+  try {
+    const complaints = await Complaint.find()
+      .sort({ created_at: -1 })
+      .populate('userId', 'name email');
+    
+    res.json({ status: 'success', complaints });
+  } catch (err) {
+    console.error('Error fetching all complaints:', err);
+    res.status(500).json({ status: 'error', error_message: err.message });
+  }
+};
+
+// Update complaint status
+exports.updateComplaintStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, resolution_details } = req.body;
+    
+    if (!id || !status) {
+      return res.status(400).json({ 
+        status: 'error', 
+        error_message: 'Complaint ID and status are required' 
+      });
+    }
+
+    const validStatuses = ['pending', 'in_progress', 'resolved', 'rejected'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ 
+        status: 'error', 
+        error_message: 'Invalid status. Must be one of: pending, in_progress, resolved, rejected' 
+      });
+    }
+
+    const complaint = await Complaint.findById(id);
+    if (!complaint) {
+      return res.status(404).json({ 
+        status: 'error', 
+        error_message: 'Complaint not found' 
+      });
+    }
+
+    complaint.status = status;
+    complaint.resolution_details = resolution_details || complaint.resolution_details;
+    complaint.updated_at = new Date();
+
+    await complaint.save();
+    
+    res.json({ 
+      status: 'success', 
+      message: 'Complaint status updated successfully',
+      complaint: {
+        ...complaint.toObject(),
+        userId: complaint.userId.toObject()
+      }
+    });
+  } catch (err) {
+    console.error('Error updating complaint status:', err);
+    res.status(500).json({ status: 'error', error_message: err.message });
+  }
+};

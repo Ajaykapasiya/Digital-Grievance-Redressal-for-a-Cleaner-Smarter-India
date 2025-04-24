@@ -37,8 +37,14 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials, isAdmin = false) => {
     setError(null);
     try {
-      console.log('Login request:', { ...credentials, isAdmin }); // Debug log
-      const response = await (isAdmin ? adminLogin(credentials) : userLogin(credentials));
+      // Only pass email and password to the backend
+      const loginData = {
+        email: credentials.email,
+        password: credentials.password
+      };
+      
+      console.log('Login request:', { ...loginData, isAdmin }); // Debug log
+      const response = await (isAdmin ? adminLogin(loginData) : userLogin(loginData));
       console.log('Login response:', response.data); // Debug log
 
       if (!response.data || !response.data.token) {
@@ -49,12 +55,13 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', token);
       localStorage.setItem('userType', isAdmin ? 'admin' : 'user');
       localStorage.setItem('userId', userData._id); // Store user ID in localStorage
+      
+      // Update user state with the correct userType
       setUser({ ...userData, userType: isAdmin ? 'admin' : 'user' });
-      return response.data;
+      
+      return { success: true, user: userData };
     } catch (err) {
-      console.error('Login error:', err.response || err); // Debug log
-      const errorMessage = err.response?.data?.error_message || err.message || 'Login failed';
-      setError(errorMessage);
+      console.error('Login error:', err);
       throw err;
     }
   };

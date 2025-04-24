@@ -29,12 +29,30 @@ export const updateUserProfile = (data) => API.put('/user/profile', data);
 export const getAdminProfile = () => API.get('/admin_user/profile');
 export const updateAdminProfile = (data) => API.put('/admin_user/profile', data);
 export const getAllUsers = () => API.get('/admin_user/users');
+export const getAllComplaints = async () => {
+  try {
+    const response = await API.get('/complaint/all');
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const updateComplaintStatus = async (complaintId, status, resolutionDetails) => {
+  try {
+    const response = await API.put(`/complaint/${complaintId}/status`, {
+      status,
+      resolution_details: resolutionDetails
+    });
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
 
 // Complaint APIs
 export const createComplaint = (data) => API.post('/complaint/create', data);
 export const getUserComplaints = () => API.get('/complaint/user_complaints');
 export const getComplaintById = (id) => API.get(`/complaint/${id}`);
-export const updateComplaintStatus = (id, data) => API.put(`/complaint/${id}/status`, data);
-export const getAllComplaints = () => API.get('/complaint/all');
 export const getComplaintsByDistrict = (district) => API.get(`/complaint/district/${district}`);
 export const getComplaintsByState = (state) => API.get(`/complaint/state/${state}`);
