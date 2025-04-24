@@ -1,4 +1,5 @@
-const jwt = require('jsonwebtoken');
+// In authMiddleware.js
+const token = req.headers['authorization']?.split(' ')[1]; // Extract token from "Bearer TOKEN"const jwt = require('jsonwebtoken');
 
 const authMiddleware = (req, res, next) => {
   const token = req.headers['authorization'];

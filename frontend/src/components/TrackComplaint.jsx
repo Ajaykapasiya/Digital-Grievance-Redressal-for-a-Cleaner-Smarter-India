@@ -12,16 +12,40 @@ function TrackComplaint() {
     const fetchComplaints = async () => {
       try {
         const token = localStorage.getItem('token');
+        
+        // Get user ID from JWT token
+        const tokenParts = token.split('.');
+        if (tokenParts.length !== 3) {
+          throw new Error('Invalid token format');
+        }
+        
+        // Decode the payload part of the JWT token
+        const payload = JSON.parse(atob(tokenParts[1]));
+        console.log('Token payload in TrackComplaint:', payload);
+        
+        // Extract user ID from token payload
+        const userId = payload.userId;
+        if (!userId) {
+          throw new Error('User ID not found in token');
+        }
+        
         const response = await getUserComplaints({ 
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            user_id: userId // Add user_id to headers
+          }
         });
-        setComplaints(response.data);
+        
+        console.log('Complaints response:', response.data);
+        setComplaints(response.data.complaints || []);
       } catch (err) {
+        console.error('Error fetching complaints:', err);
         setError('Failed to fetch complaints');
       } finally {
         setLoading(false);
       }
     };
+    
     fetchComplaints();
   }, []);
 

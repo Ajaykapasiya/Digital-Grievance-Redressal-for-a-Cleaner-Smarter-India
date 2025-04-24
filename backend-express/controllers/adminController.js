@@ -1,49 +1,85 @@
-const AdminUser = require('../models/AdminUser');
+// File: /backend-express/controllers/adminController.js
 
-// Create Admin User
-exports.createAdminUser = async (req, res) => {
-  const { name, email, phone, designation, municipal_id, department, password } = req.body;
+const Complaint = require('../models/Complaint');
 
+// Admin review of complaints
+exports.reviewComplaint = async (req, res) => {
   try {
-    const existingAdmin = await AdminUser.findOne({ email });
-    if (existingAdmin) {
-      return res.status(400).json({ status: 'error', error_message: 'Email already exists' });
+    const { complaintId } = req.params;
+    const { status, remarks, verification_needed } = req.body;
+    
+    // Validate admin user
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        status: 'error', 
+        error_message: 'Unauthorized. Admin access required.' 
+      });
     }
-
-    const adminUser = new AdminUser({ name, email, phone, designation, municipal_id, department, password });
-    await adminUser.save();
-    res.json({ status: 'success', adminUser });
+    
+    // Find the complaint
+    const complaint = await Complaint.findById(complaintId);
+    
+    if (!complaint) {
+      return res.status(404).json({ 
+        status: 'error', 
+        error_message: 'Complaint not found' 
+      });
+    }
+    
+    // Update admin review
+    complaint.admin_review = {
+      status,
+      reviewed_by: req.user._id,
+      review_date: new Date(),
+      remarks,
+      verification_needed,
+      validation_warnings: complaint.admin_review.validation_warnings
+    };
+    
+    // Update complaint status based on review
+    if (status === 'approved') {
+      complaint.status = 'in_progress';
+    } else if (status === 'rejected') {
+      complaint.status = 'rejected';
+    }
+    
+    complaint.updated_at = new Date();
+    
+    await complaint.save();
+    
+    res.json({ 
+      status: 'success', 
+      message: 'Complaint review updated',
+      complaint 
+    });
   } catch (err) {
+    console.error('Admin review error:', err);
     res.status(500).json({ status: 'error', error_message: err.message });
   }
 };
 
-// Update Admin Password
-exports.updateAdminPassword = async (req, res) => {
-  const { email, password } = req.body;
-
+// Get complaints pending review
+exports.getPendingReviews = async (req, res) => {
   try {
-    const adminUser = await AdminUser.findOne({ email });
-    if (!adminUser) {
-      return res.status(400).json({ status: 'error', error_message: 'Admin user not found' });
+    // Validate admin user
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        status: 'error', 
+        error_message: 'Unauthorized. Admin access required.' 
+      });
     }
-
-    adminUser.password = password;
-    await adminUser.save();
-    res.json({ status: 'success', message: 'Password updated successfully' });
+    
+    // Find complaints pending review
+    const complaints = await Complaint.find({
+      'admin_review.status': 'pending'
+    }).sort({ created_at: -1 });
+    
+    res.json({ 
+      status: 'success', 
+      complaints 
+    });
   } catch (err) {
+    console.error('Get pending reviews error:', err);
     res.status(500).json({ status: 'error', error_message: err.message });
   }
-};
-
-// Fetch Complaints
-exports.fetchComplaints = async (req, res) => {
-  // Logic to fetch complaints for admin
-  res.json({ status: 'success', complaints: [] });
-};
-
-// Fetch Statistics
-exports.fetchStatistics = async (req, res) => {
-  // Logic to fetch statistics for admin
-  res.json({ status: 'success', stats: [] });
 };

@@ -8,6 +8,7 @@ const userRoutes = require('./routes/user');
 const adminRoutes = require('./routes/admin_user');
 const complaintRoutes = require('./routes/complaint');
 const path = require('path');
+const { validateComplaint } = require('./middleware/complaintValidation');
 
 const app = express();
 
@@ -63,3 +64,5 @@ const server = app.listen(PORT, () => {
   }
   process.exit(1);
 });
+// In server.js
+app.use('/complaint', complaintRoutes); // Remove validateComplaint

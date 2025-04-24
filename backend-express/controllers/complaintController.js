@@ -1,7 +1,11 @@
-const Complaint = require('../models/Complaint');
+// File: /backend-express/controllers/complaintController.js
+
+// Add this near the top of your file
+const { validateComplaint } = require('../middleware/complaintValidation');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const Complaint = require('../models/Complaint');
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -30,14 +34,12 @@ const upload = multer({
   }
 }).single('image');
 
-// Create a new complaint with file upload
+// Update your createComplaint function to handle validation warnings
 exports.createComplaint = (req, res) => {
   upload(req, res, async function(err) {
     if (err instanceof multer.MulterError) {
-      // A Multer error occurred when uploading
       return res.status(400).json({ status: 'error', error_message: `Upload error: ${err.message}` });
     } else if (err) {
-      // An unknown error occurred
       return res.status(400).json({ status: 'error', error_message: err.message });
     }
     
@@ -45,7 +47,7 @@ exports.createComplaint = (req, res) => {
       // Extract data from request
       const { subject, sub_category, description, latitude, longitude, address, district, state, pincode, urgency_level } = req.body;
       
-      // Get user ID from token (assuming it's extracted in middleware)
+      // Get user ID from token
       const user_id = req.headers.user_id || req.user?.id;
       
       console.log('Headers received:', req.headers);
@@ -61,8 +63,8 @@ exports.createComplaint = (req, res) => {
         subject,
         sub_category,
         description,
-        // Save image path if uploaded
         image: req.file ? `/uploads/${req.file.filename}` : null,
+        imageHash: req.imageHash, // From image validation middleware
         latitude,
         longitude,
         address,
@@ -70,11 +72,26 @@ exports.createComplaint = (req, res) => {
         state,
         pincode,
         urgency_level,
-        status: 'pending', // Default status
+        status: 'pending',
+        admin_review: {
+          status: 'pending',
+          validation_warnings: req.validationWarnings || []
+        }
       });
 
       await complaint.save();
-      res.json({ status: 'success', complaint });
+      
+      // Return validation warnings to the client if any
+      const response = {
+        status: 'success',
+        complaint,
+      };
+      
+      if (req.validationWarnings && req.validationWarnings.length > 0) {
+        response.warnings = req.validationWarnings;
+      }
+      
+      res.json(response);
     } catch (err) {
       console.error('Complaint creation error:', err);
       res.status(500).json({ status: 'error', error_message: err.message });
@@ -85,9 +102,16 @@ exports.createComplaint = (req, res) => {
 // Show complaints for a user
 exports.showUserComplaints = async (req, res) => {
   try {
-    const complaints = await Complaint.find({ user_id: req.headers.user_id });
+    const user_id = req.headers.user_id || req.user?.id;
+    
+    if (!user_id) {
+      return res.status(401).json({ status: 'error', error_message: 'User not authenticated' });
+    }
+    
+    const complaints = await Complaint.find({ user_id }).sort({ created_at: -1 });
     res.json({ status: 'success', complaints });
   } catch (err) {
+    console.error('Error fetching user complaints:', err);
     res.status(500).json({ status: 'error', error_message: err.message });
   }
 };
@@ -95,22 +119,21 @@ exports.showUserComplaints = async (req, res) => {
 // Show complaint by ID
 exports.showComplaintById = async (req, res) => {
   try {
-    const complaint = await Complaint.findById(req.query.id);
+    const complaintId = req.params.id;
+    
+    if (!complaintId) {
+      return res.status(400).json({ status: 'error', error_message: 'Complaint ID is required' });
+    }
+    
+    const complaint = await Complaint.findById(complaintId);
+    
     if (!complaint) {
       return res.status(404).json({ status: 'error', error_message: 'Complaint not found' });
     }
+    
     res.json({ status: 'success', complaint });
   } catch (err) {
-    res.status(500).json({ status: 'error', error_message: err.message });
-  }
-};
-
-// Get updates for a complaint
-exports.getUpdates = async (req, res) => {
-  try {
-    const updates = []; // Replace with actual logic to fetch updates
-    res.json({ status: 'success', updates });
-  } catch (err) {
+    console.error('Error fetching complaint by ID:', err);
     res.status(500).json({ status: 'error', error_message: err.message });
   }
 };
