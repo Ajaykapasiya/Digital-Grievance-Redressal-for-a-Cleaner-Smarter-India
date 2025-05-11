@@ -34,17 +34,16 @@ const CreateComplaint = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [formData, setFormData] = useState({
     subject: '',
-    sub_category: ''
-    ,
+    sub_category: '',
     description: '',
     image: null,
-    latitude: '',
-    longitude: '',
+    latitude: null,
+    longitude: null,
     address: '',
     district: '',
     state: '',
     pincode: '',
-    urgency_level: '', // Added urgency level
+    urgency_level: 'medium'  // Default to medium urgency
   });
 
   // Check if user is logged in
@@ -172,73 +171,60 @@ const CreateComplaint = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validate required fields
-    if (!formData.subject || !formData.sub_category || !formData.description || 
-        !formData.address || !formData.district || !formData.state || !formData.urgency_level) {
-      setError('Please fill in all required fields');
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
+    // Validate required fields
+    const requiredFields = ['subject', 'description', 'address', 'district', 'state'];
+    const missingFields = requiredFields.filter(field => !formData[field].trim());
+    
+    if (missingFields.length > 0) {
+      setError(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      setLoading(false);
+      return;
+    }
+
     try {
+      // Create a regular JSON object instead of FormData
+      const jsonData = {
+        subject: formData.subject,
+        sub_category: formData.sub_category || '',
+        description: formData.description,
+        address: formData.address,
+        district: formData.district,
+        state: formData.state,
+        pincode: formData.pincode || '',
+        urgency_level: formData.urgency_level || 'medium'
+      };
+      
+      // Add coordinates if available
+      if (formData.latitude !== null && formData.latitude !== undefined) {
+        jsonData.latitude = formData.latitude;
+      }
+      if (formData.longitude !== null && formData.longitude !== undefined) {
+        jsonData.longitude = formData.longitude;
+      }
+
+      // Add user ID from token
       const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Please login to submit a complaint');
+      if (token) {
+        const base64Token = token.split('.')[1];
+        const decodedToken = JSON.parse(atob(base64Token));
+        jsonData.user_id = decodedToken.userId;
       }
+      
+      // Temporarily disable image upload
+      // if (formData.image) {
+      //   formDataToSend.append('image', formData.image);
+      // }
 
-      // Get user ID from JWT token
-      const tokenParts = token.split('.');
-      if (tokenParts.length !== 3) {
-        throw new Error('Invalid token format');
-      }
-      
-      // Decode the payload part of the JWT token
-      const payload = JSON.parse(atob(tokenParts[1]));
-      console.log('Token payload:', payload);
-      
-      // Extract user ID from token payload
-      const userId = payload.userId;
-      console.log('User ID from token:', userId);
-      
-      if (!userId) {
-        throw new Error('User ID not found in token. Please try logging in again.');
-      }
-
-      // Create FormData object to handle file upload
-      const submitData = new FormData();
-      
-      // Append all form data
-      Object.keys(formData).forEach(key => {
-        if (key === 'image' && formData[key]) {
-          // For file input, append the file object directly
-          submitData.append('image', formData[key]);
-        } else if (formData[key] !== null && formData[key] !== undefined) {
-          // For other fields, convert to string
-          submitData.append(key, formData[key].toString());
-        }
-      });
-
-      // Add user_id to the form data - this is important for the backend
-      submitData.append('user_id', userId);
-
-      console.log('Sending request with user_id in form data:', userId);
-      const response = await createComplaint(submitData);
-      
-      if (response.data) {
-        // Redirect to track complaints page
-        navigate('/track-complaint');
-      } else {
-        throw new Error('Failed to create complaint');
-      }
-    } catch (err) {
-      console.error('Submission error:', err);
-      if (err.response) {
-        console.error('Backend error response:', err.response.data);
-      }
-      setError(err.response?.data?.error_message || err.message || 'Failed to create complaint');
+      console.log('Sending complaint data:', jsonData);
+      const response = await createComplaint(jsonData);
+      console.log('Complaint submitted successfully:', response);
+      navigate('/track-complaint');
+    } catch (error) {
+      console.error('Error submitting complaint:', error);
+      setError(error.response?.data?.message || 'Failed to submit complaint');
     } finally {
       setLoading(false);
     }
@@ -274,7 +260,6 @@ const CreateComplaint = () => {
             value={formData.sub_category}
             onChange={handleChange}
             className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary"
-            required
           >
             <option value="">Select a category</option>
             <option value="garbage">Garbage</option>
@@ -388,6 +373,7 @@ const CreateComplaint = () => {
             ))}
           </div>
         </div>
+        
 
         {/* Image Upload Section */}
         <div>

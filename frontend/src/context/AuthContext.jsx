@@ -34,16 +34,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (credentials, isAdmin = false) => {
+  const login = async (email, password, isAdmin = false) => {
     setError(null);
     try {
-      // Only pass email and password to the backend
-      const loginData = {
-        email: credentials.email,
-        password: credentials.password
-      };
-      
+      const loginData = { email, password };
       console.log('Login request:', { ...loginData, isAdmin }); // Debug log
+      
       const response = await (isAdmin ? adminLogin(loginData) : userLogin(loginData));
       console.log('Login response:', response.data); // Debug log
 
@@ -54,7 +50,6 @@ export const AuthProvider = ({ children }) => {
       const { token, user: userData } = response.data;
       localStorage.setItem('token', token);
       localStorage.setItem('userType', isAdmin ? 'admin' : 'user');
-      localStorage.setItem('userId', userData._id); // Store user ID in localStorage
       
       // Update user state with the correct userType
       setUser({ ...userData, userType: isAdmin ? 'admin' : 'user' });
@@ -69,7 +64,6 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userType');
-    localStorage.removeItem('userId'); // Remove user ID from localStorage on logout
     setUser(null);
     setError(null);
   };

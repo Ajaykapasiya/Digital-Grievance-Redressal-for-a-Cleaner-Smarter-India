@@ -28,7 +28,7 @@ const Login = () => {
     setError(null);
 
     try {
-      await login(formData, isAdmin);
+      await login(formData.email, formData.password, isAdmin);
       
       // Redirect to the page user tried to access, or default dashboard
       const from = location.state?.from || (isAdmin ? '/admin-dashboard' : '/user-dashboard');
@@ -50,24 +50,10 @@ const Login = () => {
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Sign in to your account
         </h2>
-        <div className="mt-2 text-center text-sm text-gray-600">
-          <button
-            onClick={() => setIsAdmin(!isAdmin)}
-            className="font-medium text-indigo-600 hover:text-indigo-500"
-          >
-            Switch to {isAdmin ? 'User' : 'Admin'} Login
-          </button>
-        </div>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {error && (
-            <div className="mb-4 text-sm text-red-600 bg-red-50 p-4 rounded-md">
-              {error}
-            </div>
-          )}
-
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
@@ -78,6 +64,7 @@ const Login = () => {
                   id="email"
                   name="email"
                   type="email"
+                  autoComplete="email"
                   required
                   value={formData.email}
                   onChange={handleChange}
@@ -95,6 +82,7 @@ const Login = () => {
                   id="password"
                   name="password"
                   type="password"
+                  autoComplete="current-password"
                   required
                   value={formData.password}
                   onChange={handleChange}
@@ -103,11 +91,37 @@ const Login = () => {
               </div>
             </div>
 
+            <div className="flex items-center">
+              <input
+                id="isAdmin"
+                name="isAdmin"
+                type="checkbox"
+                checked={isAdmin}
+                onChange={(e) => setIsAdmin(e.target.checked)}
+                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+              />
+              <label htmlFor="isAdmin" className="ml-2 block text-sm text-gray-900">
+                Login as Admin
+              </label>
+            </div>
+
+            {error && (
+              <div className="rounded-md bg-red-50 p-4">
+                <div className="flex">
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">{error}</h3>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+                  loading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
                 {loading ? 'Signing in...' : 'Sign in'}
               </button>

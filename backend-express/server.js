@@ -1,5 +1,4 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const connectDB = require('./db');
@@ -8,6 +7,7 @@ const userRoutes = require('./routes/user');
 const adminRoutes = require('./routes/admin_user');
 const complaintRoutes = require('./routes/complaint');
 const path = require('path');
+const multer = require('multer');
 const { validateComplaint } = require('./middleware/complaintValidation');
 
 const app = express();
@@ -19,7 +19,14 @@ mongoose.set('strictQuery', true);
 connectDB();
 
 // Middleware
-app.use(bodyParser.json());
+// Use express.json() for JSON parsing
+app.use(express.json());
+// Use express.urlencoded() for URL-encoded form data
+app.use(express.urlencoded({ extended: true }));
+
+const upload = multer();
+app.use(upload.any());
+
 app.use(cors({
   origin: function(origin, callback) {
     // Allow requests with no origin (like mobile apps, curl, etc.)

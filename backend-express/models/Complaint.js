@@ -12,25 +12,9 @@ const complaintSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  sub_category: {
-    type: String,
-    required: true
-  },
   description: {
     type: String,
     required: true
-  },
-  image: {
-    type: String
-  },
-  imageHash: {
-    type: String
-  },
-  latitude: {
-    type: String
-  },
-  longitude: {
-    type: String
   },
   address: {
     type: String,
@@ -44,49 +28,91 @@ const complaintSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  pincode: {
+  latitude: {
+    type: Number
+  },
+  longitude: {
+    type: Number
+  },
+  image: {
     type: String
   },
-  urgency_level: {
-    type: String,
-    enum: ['low', 'medium', 'high'],
-    default: 'medium'
+  imageHash: {
+    type: String
   },
   status: {
     type: String,
     enum: ['pending', 'in_progress', 'resolved', 'rejected'],
     default: 'pending'
   },
-  // New fields for admin review
-  admin_review: {
-    status: {
+  urgency_level: {
+    type: String,
+    enum: ['low', 'medium', 'high'],
+    default: 'medium'
+  },
+  resolution_details: {
+    type: String
+  },
+  validation: {
+    riskLevel: {
       type: String,
-      enum: ['pending', 'approved', 'rejected', 'needs_verification'],
-      default: 'pending'
+      enum: ['low', 'medium', 'high'],
+      default: 'low'
     },
-    reviewed_by: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Admin'
+    riskFactors: [{
+      type: String
+    }],
+    gpsValidation: {
+      isValid: {
+        type: Boolean,
+        default: false
+      },
+      distance: {
+        type: Number
+      },
+      reportedAddress: {
+        type: String
+      },
+      verifiedAddress: {
+        type: String
+      }
     },
-    review_date: Date,
-    remarks: String,
-    verification_needed: {
+    imageValidation: {
+      isDuplicate: {
+        type: Boolean,
+        default: false
+      },
+      similarComplaints: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Complaint'
+      }],
+      similarityScore: {
+        type: Number
+      }
+    },
+    needsManualReview: {
       type: Boolean,
       default: false
     },
-    validation_warnings: [String]
-  },
-  created_at: {
-    type: Date,
-    default: Date.now
-  },
-  updated_at: {
-    type: Date,
-    default: Date.now
+    validatedAt: {
+      type: Date
+    }
+  }
+}, {
+  timestamps: {
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
   }
 });
 
-// Add geospatial index for location-based queries
+// Add indexes for faster queries
+complaintSchema.index({ user_id: 1, created_at: -1 });
+complaintSchema.index({ district: 1, state: 1 });
+complaintSchema.index({ status: 1 });
+complaintSchema.index({ 'validation.riskLevel': 1 });
+complaintSchema.index({ imageHash: 1 });
 complaintSchema.index({ latitude: 1, longitude: 1 });
 
-module.exports = mongoose.model('Complaint', complaintSchema);
+const Complaint = mongoose.model('Complaint', complaintSchema);
+
+module.exports = Complaint;

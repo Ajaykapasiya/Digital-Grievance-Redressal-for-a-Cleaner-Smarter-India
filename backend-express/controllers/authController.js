@@ -119,6 +119,49 @@ exports.userLogin = async (req, res) => {
 exports.adminLogin = async (req, res) => {
   const { email, password } = req.body;
   try {
+    // Check for default admin credentials
+    if (email === 'admin@cleanindia.com' && password === 'admin123') {
+      // Create admin user if it doesn't exist
+      let admin = await AdminUser.findOne({ email });
+      
+      if (!admin) {
+        // Create default admin user
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        
+        admin = new AdminUser({
+          name: 'Admin',
+          email: email,
+          password: hashedPassword,
+          phone: '0000000000',
+          designation: 'System Administrator',
+          municipal_id: 'ADMIN001',
+          department: 'IT'
+        });
+        
+        await admin.save();
+      }
+
+      // Generate JWT token
+      const token = jwt.sign(
+        { userId: admin._id, email: admin.email, isAdmin: true },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+
+      return res.json({
+        status: 'success',
+        user: {
+          id: admin._id,
+          name: admin.name,
+          email: admin.email,
+          isAdmin: true
+        },
+        token
+      });
+    }
+
+    // Regular admin login flow
     const admin = await AdminUser.findOne({ email });
     if (!admin) {
       return res.status(400).json({
@@ -154,6 +197,7 @@ exports.adminLogin = async (req, res) => {
       token
     });
   } catch (err) {
+    console.error('Admin login error:', err);
     res.status(500).json({
       status: 'error',
       error_message: err.message
