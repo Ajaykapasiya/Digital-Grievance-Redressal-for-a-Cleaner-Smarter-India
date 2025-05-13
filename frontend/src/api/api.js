@@ -44,12 +44,22 @@ export const getAllComplaints = async () => {
 };
 export const updateComplaintStatus = async (complaintId, status, resolutionDetails) => {
   try {
+    console.log('Updating complaint status with:', {
+      complaintId,
+      status,
+      resolutionDetails
+    });
+    
     const response = await API.put(`/complaint/${complaintId}/status`, {
       status,
       resolution_details: resolutionDetails
     });
+    
+    console.log('Update status response:', response.data);
     return response;
   } catch (error) {
+    console.error('Error updating complaint status:', error);
+    console.error('Error details:', error.response?.data || error.message);
     throw error;
   }
 };

@@ -148,44 +148,60 @@ exports.getAllComplaints = async (req, res) => {
 exports.updateComplaintStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, resolutionDetails, adminRemarks } = req.body;
+    const { status, resolution_details } = req.body;
+    
+    console.log('Updating complaint status:', {
+      complaintId: id,
+      status,
+      resolution_details,
+      user: req.user
+    });
 
+    // Find the complaint by ID
     const complaint = await Complaint.findById(id);
     if (!complaint) {
+      console.log('Complaint not found:', id);
       return res.status(404).json({
         status: 'error',
         message: 'Complaint not found'
       });
     }
 
-    // Update complaint status and admin review
+    // Update complaint status
     complaint.status = status;
-    complaint.admin_review = {
-      status: status === 'rejected' ? 'rejected' : 'approved',
-      reviewed_by: req.user.userId,
-      review_date: new Date(),
-      remarks: adminRemarks || resolutionDetails,
-      verification_needed: complaint.validation?.needsManualReview || false
-    };
-
+    
+    // Add resolution details if provided
+    if (resolution_details) {
+      complaint.resolution_details = resolution_details;
+    }
+    
+    // Set resolved_at date if status is resolved
     if (status === 'resolved') {
-      complaint.resolution_details = resolutionDetails;
       complaint.resolved_at = new Date();
     }
 
+    // Save the updated complaint
     await complaint.save();
+    
+    console.log('Complaint updated successfully:', {
+      id,
+      status,
+      resolution_details: resolution_details ? 'Provided' : 'Not provided'
+    });
 
-    res.status(200).json({
+    // Return success response
+    return res.status(200).json({
       status: 'success',
       data: {
         complaint
       }
     });
   } catch (error) {
-    console.error('Error updating complaint:', error);
-    res.status(500).json({
+    console.error('Error updating complaint status:', error);
+    return res.status(500).json({
       status: 'error',
-      message: 'Failed to update complaint'
+      message: 'Failed to update complaint status',
+      error: error.message
     });
   }
 };
@@ -291,26 +307,41 @@ exports.showComplaintById = async (req, res) => {
 // Get all complaints for admin
 exports.getAllComplaintsAdmin = async (req, res) => {
   try {
-    console.log('Admin requesting all complaints - getAllComplaintsAdmin function');
+    // Get User model to manually fetch user data
+    const User = require('../models/User');
     
-    // Simple find query with lean() for better performance
+    // First get all complaints
     const complaints = await Complaint.find()
       .sort({ created_at: -1 })
       .lean();
     
-    console.log(`Found ${complaints.length} complaints in database`);
+    // Process complaints to add user information
+    const processedComplaints = [];
     
-    // Log each complaint for debugging
-    complaints.forEach((complaint, index) => {
-      console.log(`Complaint ${index + 1}:`, {
-        id: complaint._id,
-        subject: complaint.subject,
-        status: complaint.status
-      });
-    });
+    // Process each complaint to add user data
+    for (const complaint of complaints) {
+      try {
+        // If user_id exists, fetch the user data
+        if (complaint.user_id) {
+          const userData = await User.findById(complaint.user_id).lean();
+          
+          if (userData) {
+            // Add user data directly to complaint object
+            complaint.user_name = userData.name;
+            complaint.user_email = userData.email;
+            complaint.user_contact = userData.contact;
+            console.log(`Added user data for complaint: ${complaint._id}, user: ${userData.name}`);
+          }
+        }
+        
+        processedComplaints.push(complaint);
+      } catch (userError) {
+        console.error(`Error fetching user data for complaint ${complaint._id}:`, userError);
+        processedComplaints.push(complaint);
+      }
+    }
     
-    // Return a simple array directly
-    return res.status(200).json(complaints);
+    return res.status(200).json(processedComplaints);
   } catch (err) {
     console.error('Error fetching all complaints:', err);
     return res.status(500).json([]);
