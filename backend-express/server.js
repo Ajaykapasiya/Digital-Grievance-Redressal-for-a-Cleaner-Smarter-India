@@ -40,7 +40,7 @@ app.use(cors({
   credentials: true
 }));
 
-// Serve uploaded files
+// Serve uploaded filessss
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
