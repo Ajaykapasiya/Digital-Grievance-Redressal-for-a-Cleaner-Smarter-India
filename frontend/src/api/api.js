@@ -1,24 +1,15 @@
 import axios from 'axios';
 
-// 1. Create the axios instance first
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 const API = axios.create({
-  baseURL: 'http://localhost:8000',
+  baseURL: BASE,
+  withCredentials: true,
 });
 
-// 2. Add interceptor after API is created
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token'); // fetch token when request is made
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// 3. Export your API calls
 // Auth APIs
-export const userSignup = (data) => API.post('/auth/user_signup', data);
+export const userSignup = (data) => API.post('/user/signup', data);
 export const userLogin = (data) => API.post('/auth/user_login', data);
-export const adminLogin = (data) => API.post('/auth/admin_login', data);
 
 // User APIs
 export const updateUserPassword = (data) => API.post('/user/update_password', data);
