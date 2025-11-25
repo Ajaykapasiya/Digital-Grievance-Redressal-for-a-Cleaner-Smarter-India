@@ -1,6 +1,6 @@
 import React from 'react';
 import './index.css';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Login from './components/Login';
@@ -36,13 +36,13 @@ const Home = () => {
               Report issues in your area and track their resolution in real-time. Let's build a better community together.
             </p>
             {/* <button className="bg-primary hover:bg-primary-dark text-white font-semibold px-8 py-3 rounded-xl transition-colors"> */}
-              {/* Lodge Your Complaint Now */}
+            {/* Lodge Your Complaint Now */}
             {/* </button> */}
           </div>
         </div>
       </section>
 
-{/*       
+      {/*       
       <section className="container mx-auto px-4">
         <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Making a Difference</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -60,7 +60,7 @@ const Home = () => {
         </div>
       </section> */}
 
-      
+
       <section className="container mx-auto px-4">
         <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Recent Successes</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -122,43 +122,39 @@ const Home = () => {
   );
 };
 
-const App = () => {
+function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <div className="min-h-screen bg-gray-50">
-          <Navbar />
-          <main>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/create-complaint" element={
-                <ProtectedRoute>
-                  <CreateComplaint />
-                </ProtectedRoute>
-              } />
-              <Route path="/track-complaint" element={
-                <ProtectedRoute>
-                  <TrackComplaint />
-                </ProtectedRoute>
-              } />
-              <Route path="/user-dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin-dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard isAdmin={true} />
-                </ProtectedRoute>
-              } />
-            </Routes>
-          </main>
-        </div>
-      </Router>
-    </AuthProvider>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <main>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/create-complaint" element={
+            <ProtectedRoute>
+              <CreateComplaint />
+            </ProtectedRoute>
+          } />
+          <Route path="/track-complaint" element={
+            <ProtectedRoute>
+              <TrackComplaint />
+            </ProtectedRoute>
+          } />
+          <Route path="/user-dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin-dashboard" element={
+            <ProtectedRoute>
+              <Dashboard isAdmin={true} />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </main>
+    </div>
   );
-};
+}
 
 export default App;

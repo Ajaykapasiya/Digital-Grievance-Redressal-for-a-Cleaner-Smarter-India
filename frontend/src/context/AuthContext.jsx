@@ -1,92 +1,47 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { userLogin, adminLogin, getUserProfile, getAdminProfile } from '../api/api';
-
-const AuthContext = createContext(null);
+import React, { createContext, useContext, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { userLogin, adminLogin, getUserProfile, setAuthToken } from '../api/api';
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userType = localStorage.getItem('userType');
-    if (token) {
-      loadUserProfile(token, userType);
-    } else {
-      setLoading(false);
-    }
-  }, []);
-
-  const loadUserProfile = async (token, userType) => {
+  const login = async (formData) => {
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      const response = await (userType === 'admin' ? getAdminProfile(headers) : getUserProfile(headers));
-      setUser({ ...response.data, userType });
-    } catch (err) {
-      console.error('Profile loading error:', err);
-      localStorage.removeItem('token');
-      localStorage.removeItem('userType');
-      setError(err.message);
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+      console.log('Received formData:', formData); // ← add this debug line
+      const email = formData.email;
+      const password = formData.password;
+      const isAdmin = formData.isAdmin || false;
 
-  const login = async (email, password, isAdmin = false) => {
-    setError(null);
-    try {
-      const loginData = { email, password };
-      console.log('Login request:', { ...loginData, isAdmin }); // Debug log
-      
-      const response = await (isAdmin ? adminLogin(loginData) : userLogin(loginData));
-      console.log('Login response:', response.data); // Debug log
+      const payload = { email, password };
+      console.log('Login payload:', payload);
 
-      if (!response.data || !response.data.token) {
-        throw new Error('Invalid response from server');
+      const res = isAdmin ? await adminLogin(payload) : await userLogin(payload);
+
+      if (res?.data?.token) {
+        localStorage.setItem('token', res.data.token);
+        setAuthToken(res.data.token);
       }
 
-      const { token, user: userData } = response.data;
-      localStorage.setItem('token', token);
-      localStorage.setItem('userType', isAdmin ? 'admin' : 'user');
-      
-      // Update user state with the correct userType
-      setUser({ ...userData, userType: isAdmin ? 'admin' : 'user' });
-      
-      return { success: true, user: userData };
+      setUser(res.data.user || { name: res.data.user_name });
+      navigate(isAdmin ? '/dashboard' : '/create-complaint');
+      return res.data;
     } catch (err) {
       console.error('Login error:', err);
+      console.error('Response data:', err.response?.data);
       throw err;
     }
   };
 
   const logout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('userType');
+    setAuthToken(null);
     setUser(null);
-    setError(null);
+    navigate('/login');
   };
 
-  const value = {
-    user,
-    loading,
-    error,
-    login,
-    logout,
-    isAuthenticated: !!user,
-    isAdmin: user?.userType === 'admin',
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, login, logout }}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-export default AuthContext;
+export const useAuth = () => useContext(AuthContext);

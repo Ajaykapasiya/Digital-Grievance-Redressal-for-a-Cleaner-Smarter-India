@@ -1,10 +1,10 @@
 // File: /backend-express/routes/complaint.js
 
 const express = require('express');
-const { 
-  createComplaint, 
-  showUserComplaints, 
-  showComplaintById, 
+const {
+  createComplaint,
+  showUserComplaints,
+  showComplaintById,
   getAllComplaintsAdmin,
   getAllComplaints,
   updateComplaintStatus,
@@ -18,22 +18,22 @@ const path = require('path');
 const fs = require('fs');
 
 const storage = multer.diskStorage({
-  destination: function(req, file, cb) {
+  destination: function (req, file, cb) {
     const uploadDir = path.join(__dirname, '../uploads');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
     cb(null, uploadDir);
   },
-  filename: function(req, file, cb) {
+  filename: function (req, file, cb) {
     cb(null, `${Date.now()}-${file.originalname}`);
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter: function(req, file, cb) {
+  fileFilter: function (req, file, cb) {
     if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
       return cb(new Error('Only image files are allowed!'), false);
     }
@@ -48,10 +48,10 @@ router.use(authMiddleware);
 
 // Admin routes
 const isAdmin = (req, res, next) => {
-  if (!req.user.isAdmin) {
-    return res.status(403).json({ 
-      status: 'error', 
-      message: 'Admin access required' 
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({
+      status: 'error',
+      message: 'Admin access required'
     });
   }
   next();

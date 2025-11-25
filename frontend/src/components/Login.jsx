@@ -1,24 +1,25 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    isAdmin: false
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
     setError(null); // Clear error when user types
   };
 
@@ -28,10 +29,11 @@ const Login = () => {
     setError(null);
 
     try {
-      await login(formData.email, formData.password, isAdmin);
+      console.log('Submitting login with:', formData); // ← verify form data before sending
+      await login(formData); // ← pass formData object, not formData.email
       
       // Redirect to the page user tried to access, or default dashboard
-      const from = location.state?.from || (isAdmin ? '/admin-dashboard' : '/user-dashboard');
+      const from = location.state?.from || (formData.isAdmin ? '/admin-dashboard' : '/user-dashboard');
       navigate(from, { replace: true });
     } catch (err) {
       console.error('Login error details:', {
@@ -96,8 +98,8 @@ const Login = () => {
                 id="isAdmin"
                 name="isAdmin"
                 type="checkbox"
-                checked={isAdmin}
-                onChange={(e) => setIsAdmin(e.target.checked)}
+                checked={formData.isAdmin}
+                onChange={handleChange}
                 className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
               />
               <label htmlFor="isAdmin" className="ml-2 block text-sm text-gray-900">
